@@ -8,3 +8,4 @@ export function normalizePhone(phone: string): string {
   return trimmed.startsWith('+') ? trimmed : `+${trimmed}`
 }
 
+

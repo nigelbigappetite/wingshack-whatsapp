@@ -37,6 +37,9 @@ body {
 
 .thread-item.active {
   background: #e3f2fd;
+  border-left: 3px solid #1976d2;
+  padding-left: 13px;
+  font-weight: 500;
 }
 
 .thread-phone {
@@ -162,4 +165,5 @@ body {
   color: #999;
   font-size: 14px;
 }
+
 

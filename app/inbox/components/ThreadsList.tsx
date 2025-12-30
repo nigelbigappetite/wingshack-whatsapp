@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { supabaseAdmin } from '@/src/lib/supabaseAdmin'
 
-
 export async function ThreadsList({ selectedThreadId }: { selectedThreadId?: string }) {
   const { data: threads, error: threadsError } = await supabaseAdmin
     .from('threads')
@@ -10,7 +9,13 @@ export async function ThreadsList({ selectedThreadId }: { selectedThreadId?: str
 
   if (threadsError) {
     console.error('Error fetching threads:', threadsError)
-    return <div className="threads-list">Error loading threads</div>
+    return (
+      <div className="threads-list">
+        <div className="empty-state" style={{ color: 'red' }}>
+          Error: {threadsError.message}
+        </div>
+      </div>
+    )
   }
 
   if (!threads || threads.length === 0) {
@@ -75,4 +80,3 @@ export async function ThreadsList({ selectedThreadId }: { selectedThreadId?: str
     </div>
   )
 }
-

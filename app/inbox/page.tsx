@@ -14,13 +14,11 @@ export default function Inbox({ searchParams }: InboxPageProps) {
       <ThreadsList selectedThreadId={selectedThreadId} />
       <div className="messages-view">
         {selectedThreadId ? (
-          <>
-            <MessagesList threadId={selectedThreadId} />
-            <ReplyForm threadId={selectedThreadId} />
-          </>
+          <MessagesList threadId={selectedThreadId} />
         ) : (
-          <div className="empty-state">Select a thread to view messages</div>
+          <div className="empty-state">Select a conversation</div>
         )}
+        {selectedThreadId && <ReplyForm threadId={selectedThreadId} />}
       </div>
     </div>
   )
