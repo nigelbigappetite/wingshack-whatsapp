@@ -2,6 +2,8 @@ import { ThreadsList } from './components/ThreadsList'
 import { MessagesList } from './components/MessagesList'
 import { ReplyForm } from './components/ReplyForm'
 
+export const dynamic = 'force-dynamic'
+
 interface InboxPageProps {
   searchParams: { thread?: string }
 }
