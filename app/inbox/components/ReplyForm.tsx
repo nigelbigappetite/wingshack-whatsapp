@@ -43,9 +43,18 @@ export function ReplyForm({ threadId }: ReplyFormProps) {
         return
       }
 
-      // Clear input and refresh
+      const result = await response.json()
+      
+      // Clear input immediately
       setBody('')
-      router.refresh()
+      
+      // Trigger manual refresh of messages list
+      window.dispatchEvent(new CustomEvent('refresh-messages'))
+      
+      // Also refresh page as fallback
+      setTimeout(() => {
+        router.refresh()
+      }, 500)
     } catch (error) {
       console.error('Error sending message:', error)
       setError('Failed to send message')

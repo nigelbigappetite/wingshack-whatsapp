@@ -12,45 +12,69 @@ interface Message {
   status: string
 }
 
+// Global event listener for manual refresh
+if (typeof window !== 'undefined') {
+  window.addEventListener('message-sent', () => {
+    // Trigger refresh in all MessagesList components
+    window.dispatchEvent(new CustomEvent('refresh-messages'))
+  })
+}
+
 export function MessagesList({ threadId }: { threadId: string }) {
   const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
+  const fetchMessages = async () => {
     if (!threadId) {
       setMessages([])
       setLoading(false)
       return
     }
 
-    async function fetchMessages() {
-      try {
-        setLoading(true)
-        setError(null)
+    try {
+      setLoading(true)
+      setError(null)
 
-        const { data: messagesData, error: messagesError } = await supabaseClient
-          .from('messages')
-          .select('id, thread_id, direction, body, created_at, status')
-          .eq('thread_id', threadId)
-          .order('created_at', { ascending: true })
+      const { data: messagesData, error: messagesError } = await supabaseClient
+        .from('messages')
+        .select('id, thread_id, direction, body, created_at, status')
+        .eq('thread_id', threadId)
+        .order('created_at', { ascending: true })
 
-        if (messagesError) {
-          console.error('[MessagesList] Error fetching messages:', messagesError)
-          setError(messagesError.message)
-          return
-        }
-
-        setMessages(messagesData || [])
-      } catch (err: any) {
-        console.error('[MessagesList] Error:', err)
-        setError(err.message)
-      } finally {
-        setLoading(false)
+      if (messagesError) {
+        console.error('[MessagesList] Error fetching messages:', messagesError)
+        setError(messagesError.message)
+        return
       }
-    }
 
+      setMessages(messagesData || [])
+    } catch (err: any) {
+      console.error('[MessagesList] Error:', err)
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
     fetchMessages()
+    
+    // Listen for manual refresh events
+    const handleRefresh = () => {
+      console.log('[MessagesList] Manual refresh triggered')
+      fetchMessages()
+    }
+    
+    window.addEventListener('refresh-messages', handleRefresh)
+    
+    return () => {
+      window.removeEventListener('refresh-messages', handleRefresh)
+    }
+  }, [threadId])
+
+  useEffect(() => {
+    if (!threadId) return
 
     // Subscribe to real-time updates on messages table
     const channel = supabaseClient
