@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { supabaseClient } from '@/src/lib/supabaseClient'
 
 interface Message {
@@ -25,7 +25,7 @@ export function MessagesList({ threadId }: { threadId: string }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchMessages = async () => {
+  const fetchMessages = useCallback(async () => {
     if (!threadId) {
       setMessages([])
       setLoading(false)
@@ -55,7 +55,7 @@ export function MessagesList({ threadId }: { threadId: string }) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [threadId])
 
   useEffect(() => {
     fetchMessages()
@@ -71,7 +71,7 @@ export function MessagesList({ threadId }: { threadId: string }) {
     return () => {
       window.removeEventListener('refresh-messages', handleRefresh)
     }
-  }, [threadId])
+  }, [fetchMessages])
 
   useEffect(() => {
     if (!threadId) return
