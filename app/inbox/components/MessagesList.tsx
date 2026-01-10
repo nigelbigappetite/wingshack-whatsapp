@@ -76,40 +76,54 @@ export function MessagesList({ threadId }: { threadId: string }) {
   useEffect(() => {
     if (!threadId) return
 
+    console.log(`[MessagesList] Setting up real-time subscription for thread: ${threadId}`)
+
     // Subscribe to real-time updates on messages table
     const channel = supabaseClient
-      .channel(`messages-${threadId}`)
+      .channel(`messages-${threadId}-${Date.now()}`) // Unique channel name to avoid conflicts
       .on(
         'postgres_changes',
         {
-          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+          event: 'INSERT', // Specifically listen for new messages
           schema: 'public',
           table: 'messages',
           filter: `thread_id=eq.${threadId}`,
         },
         async (payload) => {
-          console.log('[MessagesList] Real-time update received:', payload.eventType, payload)
+          console.log('[MessagesList] New message received via real-time:', payload)
           
-          // Refetch messages when any change occurs
-          const { data: messagesData, error: messagesError } = await supabaseClient
-            .from('messages')
-            .select('id, thread_id, direction, body, created_at, status')
-            .eq('thread_id', threadId)
-            .order('created_at', { ascending: true })
-
-          if (!messagesError && messagesData) {
-            setMessages(messagesData)
-            console.log('[MessagesList] Messages updated via real-time:', messagesData.length)
-          }
+          // Immediately refetch messages to get the new one
+          fetchMessages()
         }
       )
-      .subscribe()
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE', // Also listen for message updates (status changes)
+          schema: 'public',
+          table: 'messages',
+          filter: `thread_id=eq.${threadId}`,
+        },
+        async (payload) => {
+          console.log('[MessagesList] Message updated via real-time:', payload)
+          fetchMessages()
+        }
+      )
+      .subscribe((status) => {
+        console.log(`[MessagesList] Subscription status: ${status}`)
+        if (status === 'SUBSCRIBED') {
+          console.log('[MessagesList] Successfully subscribed to real-time updates')
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('[MessagesList] Channel subscription error')
+        }
+      })
 
     // Cleanup subscription on unmount
     return () => {
+      console.log(`[MessagesList] Cleaning up subscription for thread: ${threadId}`)
       supabaseClient.removeChannel(channel)
     }
-  }, [threadId])
+  }, [threadId, fetchMessages])
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString)
