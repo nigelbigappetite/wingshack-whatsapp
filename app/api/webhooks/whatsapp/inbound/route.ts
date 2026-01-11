@@ -305,7 +305,7 @@ export async function POST(request: NextRequest) {
 
     const updateData: any = {
       last_message_at: updateTimestamp.toISOString(),
-      last_message_preview: body.body.substring(0, 140),
+      last_message_preview: body.body?.substring(0, 140) || 'Attachment',
       unread_count: newUnreadCount,
     }
 

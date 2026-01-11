@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 
 type ThreadStatus = 'open' | 'pending' | 'resolved' | 'closed'
 
@@ -11,6 +11,7 @@ export function ThreadFilters() {
   const [status, setStatus] = useState<ThreadStatus | ''>(searchParams.get('status') as ThreadStatus || '')
   const [unread, setUnread] = useState(searchParams.get('unread') === 'true')
 
+  // Note: updateFilters is defined but not currently used - keeping for future use
   const updateFilters = useCallback(() => {
     const params = new URLSearchParams(searchParams.toString())
     

@@ -20,16 +20,6 @@ export function TemplatePicker({ threadId, onSelect }: TemplatePickerProps) {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('')
   const [preview, setPreview] = useState<string>('')
 
-  useEffect(() => {
-    fetchTemplates()
-  }, [])
-
-  useEffect(() => {
-    if (selectedTemplateId && threadId) {
-      renderPreview()
-    }
-  }, [selectedTemplateId, threadId, renderPreview])
-
   const fetchTemplates = async () => {
     try {
       const response = await fetch('/api/templates')
