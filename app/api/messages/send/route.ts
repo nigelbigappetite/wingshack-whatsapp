@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
     // 1) Look up the thread and join to contact to get contact.phone_e164
     const { data: thread, error: threadError } = await supabaseAdmin
       .from('threads')
-      .select('id, contact_id')
+      .select('id, contact_id, channel_id')
       .eq('id', body.thread_id)
       .single()
 
@@ -169,7 +169,7 @@ export async function POST(request: NextRequest) {
       .from('outbox_jobs')
       .insert({
         message_id: message.id,
-        channel_id: threadData?.channel_id || null,
+        channel_id: thread?.channel_id || null,
         to_phone_e164: toPhoneE164,
         body: body.body,
         status: 'queued',
