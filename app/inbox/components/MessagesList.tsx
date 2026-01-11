@@ -1,8 +1,10 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { supabaseClient } from '@/src/lib/supabaseClient'
 import { MessageAttachment } from './MessageAttachment'
+import { MessageStatus } from './MessageStatus'
+import { groupMessages, MessageGroup } from '@/src/lib/messageGrouping'
 
 interface Message {
   id: string
@@ -29,6 +31,7 @@ export function MessagesList({ threadId }: { threadId: string }) {
   const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const fetchMessages = useCallback(async () => {
     if (!threadId) {
@@ -54,6 +57,11 @@ export function MessagesList({ threadId }: { threadId: string }) {
       }
 
       setMessages(messagesData || [])
+      
+      // Scroll to bottom after messages load
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+      }, 100)
     } catch (err: any) {
       console.error('[MessagesList] Error:', err)
       setError(err.message)
@@ -99,6 +107,11 @@ export function MessagesList({ threadId }: { threadId: string }) {
           
           // Immediately refetch messages to get the new one
           fetchMessages()
+          
+          // Scroll to bottom after new message
+          setTimeout(() => {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+          }, 200)
         }
       )
       .on(
@@ -129,16 +142,31 @@ export function MessagesList({ threadId }: { threadId: string }) {
       supabaseClient.removeChannel(channel)
     }
   }, [threadId, fetchMessages])
+  
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    if (messages.length > 0) {
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+      }, 100)
+    }
+  }, [messages.length])
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString)
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   }
 
+  // Group messages
+  const messageGroups = groupMessages(messages)
+
   if (loading) {
     return (
       <div className="messages-list">
-        <div className="empty-state">Loading messages...</div>
+        <div className="empty-state">
+          <div className="empty-state-icon">💬</div>
+          <div className="empty-state-message">Loading messages...</div>
+        </div>
       </div>
     )
   }
@@ -147,7 +175,8 @@ export function MessagesList({ threadId }: { threadId: string }) {
     return (
       <div className="messages-list">
         <div className="empty-state" style={{ color: 'red' }}>
-          Error: {error}
+          <div className="empty-state-icon">⚠️</div>
+          <div className="empty-state-message">Error: {error}</div>
         </div>
       </div>
     )
@@ -156,32 +185,56 @@ export function MessagesList({ threadId }: { threadId: string }) {
   if (!messages || messages.length === 0) {
     return (
       <div className="messages-list">
-        <div className="empty-state">No messages yet</div>
+        <div className="empty-state">
+          <div className="empty-state-icon">💭</div>
+          <div className="empty-state-message">No messages yet</div>
+          <div className="empty-state-hint">Start the conversation!</div>
+        </div>
       </div>
     )
   }
 
   return (
     <div className="messages-list">
-      {messages.map((message: Message) => (
+      {messageGroups.map((group: MessageGroup) => (
         <div
-          key={message.id}
-          className={`message-item message-${message.direction}`}
+          key={group.id}
+          className={`message-group message-${group.direction}`}
         >
-          <div className="message-bubble">
-            {message.body}
-            {message.media_url && (
-              <MessageAttachment
-                mediaUrl={message.media_url}
-                mimeType={message.mime_type}
-                fileName={message.file_name}
-                messageType={message.message_type}
-              />
-            )}
-          </div>
-          <div className="message-time">{formatTime(message.created_at)}</div>
+          {group.messages.map((message, index) => {
+            const isLastInGroup = index === group.messages.length - 1
+            const showTime = isLastInGroup
+
+            return (
+              <div
+                key={message.id}
+                className="message-item"
+              >
+                <div className="message-bubble">
+                  {message.body && <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{message.body}</p>}
+                  {message.media_url && (
+                    <MessageAttachment
+                      mediaUrl={message.media_url}
+                      mimeType={message.mime_type}
+                      fileName={message.file_name}
+                      messageType={message.message_type}
+                    />
+                  )}
+                </div>
+                {showTime && (
+                  <div className="message-time">
+                    {formatTime(message.created_at)}
+                    {group.direction === 'out' && (
+                      <MessageStatus status={message.status} />
+                    )}
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </div>
       ))}
+      <div ref={messagesEndRef} />
     </div>
   )
 }

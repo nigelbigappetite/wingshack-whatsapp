@@ -75,6 +75,9 @@ export function ReplyForm({ threadId }: ReplyFormProps) {
   //   setBody(renderedText)
   // }
 
+  const characterCount = body.length
+  const maxLength = 4096 // WhatsApp message limit
+
   return (
     <form className="reply-form" onSubmit={handleSubmit}>
       {/* Temporarily disabled for simplification */}
@@ -89,15 +92,35 @@ export function ReplyForm({ threadId }: ReplyFormProps) {
           {error}
         </div>
       )}
-      <textarea
-        value={body}
-        onChange={(e) => setBody(e.target.value)}
-        placeholder="Type a message..."
-        disabled={isSending}
-      />
-      <button type="submit" disabled={!canSend}>
-        {isSending ? 'Sending...' : 'Send'}
-      </button>
+      <div className="reply-form-wrapper">
+        <textarea
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          placeholder="Type a message..."
+          disabled={isSending}
+          maxLength={maxLength}
+          rows={1}
+          style={{
+            height: 'auto',
+            minHeight: '60px',
+          }}
+          onInput={(e) => {
+            const target = e.target as HTMLTextAreaElement
+            target.style.height = 'auto'
+            target.style.height = `${Math.min(target.scrollHeight, 120)}px`
+          }}
+        />
+        <div className="reply-form-actions">
+          <button type="submit" disabled={!canSend}>
+            {isSending ? 'Sending...' : 'Send'}
+          </button>
+          {characterCount > 0 && (
+            <div className="reply-form-char-count">
+              {characterCount}/{maxLength}
+            </div>
+          )}
+        </div>
+      </div>
     </form>
   )
 }

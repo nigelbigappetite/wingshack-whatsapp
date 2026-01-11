@@ -7,6 +7,7 @@ import { supabaseClient } from '@/src/lib/supabaseClient'
 import { ThreadStatusBadge } from './ThreadStatusBadge'
 import { UnreadIndicator } from './UnreadIndicator'
 import { SLABadge } from './SLABadge'
+import { getInitialsFromPhone, getColorFromPhone } from '@/src/lib/avatarUtils'
 
 interface Thread {
   id: string
@@ -247,6 +248,8 @@ export function ThreadsList({ selectedThreadId }: { selectedThreadId?: string })
       {threads.map((thread) => {
         const phone = contacts.get(thread.contact_id) || 'Unknown'
         const isActive = selectedThreadId === thread.id
+        const initials = getInitialsFromPhone(phone)
+        const avatarColor = getColorFromPhone(phone)
 
         return (
           <Link
@@ -254,24 +257,32 @@ export function ThreadsList({ selectedThreadId }: { selectedThreadId?: string })
             href={`/inbox?thread=${thread.id}`}
             className={`thread-item ${isActive ? 'active' : ''}`}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-              <div className="thread-phone">{phone}</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                {thread.status && <ThreadStatusBadge status={thread.status} />}
-                {thread.unread_count && thread.unread_count > 0 && (
-                  <UnreadIndicator count={thread.unread_count} />
-                )}
-                <SLABadge
-                  firstResponseDueAt={thread.first_response_due_at || null}
-                  followUpDueAt={thread.follow_up_due_at || null}
-                  slaBreachedAt={thread.sla_breached_at || null}
-                />
+            <div
+              className="thread-avatar"
+              style={{ backgroundColor: avatarColor }}
+            >
+              {initials}
+            </div>
+            <div className="thread-content">
+              <div className="thread-header">
+                <div className="thread-phone">{phone}</div>
+                <div className="thread-meta">
+                  {thread.status && <ThreadStatusBadge status={thread.status} />}
+                  {thread.unread_count && thread.unread_count > 0 && (
+                    <UnreadIndicator count={thread.unread_count} />
+                  )}
+                  <SLABadge
+                    firstResponseDueAt={thread.first_response_due_at || null}
+                    followUpDueAt={thread.follow_up_due_at || null}
+                    slaBreachedAt={thread.sla_breached_at || null}
+                  />
+                  <div className="thread-time">{formatTime(thread.last_message_at)}</div>
+                </div>
+              </div>
+              <div className="thread-preview">
+                {thread.last_message_preview || 'No messages'}
               </div>
             </div>
-            <div className="thread-preview">
-              {thread.last_message_preview || 'No messages'}
-            </div>
-            <div className="thread-time">{formatTime(thread.last_message_at)}</div>
           </Link>
         )
       })}

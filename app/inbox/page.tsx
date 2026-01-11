@@ -1,6 +1,7 @@
 import { ThreadsList } from './components/ThreadsList'
 import { MessagesList } from './components/MessagesList'
 import { ReplyForm } from './components/ReplyForm'
+import { MessageHeader } from './components/MessageHeader'
 // Temporarily disabled for simplification
 // import { SystemStatus } from './components/SystemStatus'
 // import { ThreadSearch } from './components/ThreadSearch'
@@ -30,12 +31,17 @@ export default function Inbox({ searchParams }: InboxPageProps) {
       <div className="messages-view">
         {selectedThreadId ? (
           <>
+            <MessageHeader threadId={selectedThreadId} />
             {/* <MarkThreadRead threadId={selectedThreadId} /> */}
             <MessagesList threadId={selectedThreadId} />
             <ReplyForm threadId={selectedThreadId} />
           </>
         ) : (
-          <div className="empty-state">Select a conversation</div>
+          <div className="empty-state">
+            <div className="empty-state-icon">💬</div>
+            <div className="empty-state-message">Select a conversation</div>
+            <div className="empty-state-hint">Choose a thread from the left to start messaging</div>
+          </div>
         )}
       </div>
     </div>
