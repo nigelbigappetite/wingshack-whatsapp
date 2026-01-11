@@ -22,6 +22,7 @@ export function MessageAttachment({
   if (isImage) {
     return (
       <div className="message-attachment">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={mediaUrl}
           alt={fileName || 'Image attachment'}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 
 interface Tag {
   id: string
@@ -17,7 +17,7 @@ export function ThreadTags({ threadId }: ThreadTagsProps) {
   const [threadTags, setThreadTags] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
 
-  const fetchTags = async () => {
+  const fetchTags = useCallback(async () => {
     try {
       const response = await fetch('/api/tags')
       const data = await response.json()
@@ -27,9 +27,9 @@ export function ThreadTags({ threadId }: ThreadTagsProps) {
     } catch (error) {
       console.error('Error fetching tags:', error)
     }
-  }
+  }, [])
 
-  const fetchThreadTags = async () => {
+  const fetchThreadTags = useCallback(async () => {
     try {
       // For now, we'll fetch thread tags by querying thread_tags table
       // In a real implementation, you'd have a dedicated endpoint
@@ -41,14 +41,14 @@ export function ThreadTags({ threadId }: ThreadTagsProps) {
     } catch (error) {
       console.error('Error fetching thread tags:', error)
     }
-  }
+  }, [threadId])
 
   useEffect(() => {
     if (threadId) {
       fetchTags()
       fetchThreadTags()
     }
-  }, [threadId])
+  }, [threadId, fetchTags, fetchThreadTags])
 
   const handleAddTag = async (tagId: string) => {
     setLoading(true)

@@ -4,6 +4,9 @@ import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { supabaseClient } from '@/src/lib/supabaseClient'
+import { ThreadStatusBadge } from './ThreadStatusBadge'
+import { UnreadIndicator } from './UnreadIndicator'
+import { SLABadge } from './SLABadge'
 
 interface Thread {
   id: string

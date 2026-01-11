@@ -5,6 +5,7 @@ import { SystemStatus } from './components/SystemStatus'
 import { ThreadSearch } from './components/ThreadSearch'
 import { ThreadFilters } from './components/ThreadFilters'
 import { MarkThreadRead } from './components/MarkThreadRead'
+import { ChannelSelector } from './components/ChannelSelector'
 
 export const dynamic = 'force-dynamic'
 

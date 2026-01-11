@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 
 interface Note {
   id: string
@@ -18,7 +18,7 @@ export function ThreadNotes({ threadId }: ThreadNotesProps) {
   const [newNote, setNewNote] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const fetchNotes = async () => {
+  const fetchNotes = useCallback(async () => {
     try {
       const response = await fetch(`/api/threads/${threadId}/notes`)
       const data = await response.json()
@@ -28,13 +28,13 @@ export function ThreadNotes({ threadId }: ThreadNotesProps) {
     } catch (error) {
       console.error('Error fetching notes:', error)
     }
-  }
+  }, [threadId])
 
   useEffect(() => {
     if (threadId) {
       fetchNotes()
     }
-  }, [threadId])
+  }, [threadId, fetchNotes])
 
   const handleAddNote = async () => {
     if (!newNote.trim()) return

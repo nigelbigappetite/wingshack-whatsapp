@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { renderTemplate } from '@/src/lib/templateRenderer'
 
 interface Template {
@@ -28,7 +28,7 @@ export function TemplatePicker({ threadId, onSelect }: TemplatePickerProps) {
     if (selectedTemplateId && threadId) {
       renderPreview()
     }
-  }, [selectedTemplateId, threadId])
+  }, [selectedTemplateId, threadId, renderPreview])
 
   const fetchTemplates = async () => {
     try {
@@ -42,7 +42,7 @@ export function TemplatePicker({ threadId, onSelect }: TemplatePickerProps) {
     }
   }
 
-  const renderPreview = async () => {
+  const renderPreview = useCallback(async () => {
     if (!selectedTemplateId || !threadId) return
 
     try {
@@ -59,7 +59,7 @@ export function TemplatePicker({ threadId, onSelect }: TemplatePickerProps) {
     } catch (error) {
       console.error('Error rendering template:', error)
     }
-  }
+  }, [selectedTemplateId, threadId])
 
   const handleUseTemplate = () => {
     if (preview) {

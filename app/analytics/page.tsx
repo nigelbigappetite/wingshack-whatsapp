@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { MetricsCard } from './components/MetricsCard'
 import { DateRangePicker } from './components/DateRangePicker'
+import { ExportButton } from './components/ExportButton'
 
 interface Summary {
   total_threads: number
@@ -39,7 +40,7 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     fetchMetrics()
-  }, [startDate, endDate])
+  }, [startDate, endDate]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const formatSeconds = (seconds: number) => {
     if (seconds < 60) return `${Math.round(seconds)}s`
