@@ -77,10 +77,10 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (contactError) {
-      logger.error('contact_upsert_error', { ...logContext, contact_id: contact?.id }, contactError)
+      logger.error('contact_upsert_error', { ...logContext, phone: normalizedPhone }, contactError)
       Sentry.captureException(contactError, {
         tags: { component: 'webhook', request_id: requestId },
-        extra: { contact_id: contact?.id },
+        extra: { phone: normalizedPhone },
       })
       return NextResponse.json(
         { error: 'Failed to upsert contact' },
