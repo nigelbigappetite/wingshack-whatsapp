@@ -244,45 +244,25 @@ export async function POST(request: NextRequest) {
 
     logger.info('message_inserted', { ...messageContext, message_id: message.id })
 
-    // 5) Evaluate automation rules and apply auto-replies
-    try {
-      const { evaluateRules, applyRuleActions, canAutoReply, sendAutoReply } = await import('@/src/lib/rulesEngine')
-      const matchedRules = await evaluateRules({
-        messageBody: body.body || '',
-        phoneNumber: normalizedPhone,
-        threadId,
-      })
-
-      for (const rule of matchedRules) {
-        await applyRuleActions(rule, {
-          messageBody: body.body || '',
-          phoneNumber: normalizedPhone,
-          threadId,
-        }, messageContext)
-
-        // Handle auto-reply with guardrails
-        if (rule.actions_json.auto_reply_template_id) {
-          const cooldownSeconds = rule.auto_reply_cooldown_seconds || 300
-          const canReply = await canAutoReply(threadId, cooldownSeconds)
-
-          if (canReply) {
-            await sendAutoReply(threadId, rule.actions_json.auto_reply_template_id, messageContext)
-          } else {
-            logger.debug('auto_reply_skipped', messageContext, {
-              rule_id: rule.id,
-              reason: 'cooldown_or_closed',
-            })
-          }
-        }
-      }
-
-      if (matchedRules.length > 0) {
-        logger.info('rules_applied', messageContext, { rule_count: matchedRules.length })
-      }
-    } catch (error: any) {
-      logger.warn('rules_evaluation_error', messageContext, { error: error.message })
-      // Don't fail the webhook if rules fail
-    }
+    // 5) Automation rules - TEMPORARILY DISABLED for simplification
+    // TODO: Re-enable after core messaging is stable
+    // try {
+    //   const { evaluateRules, applyRuleActions } = await import('@/src/lib/rulesEngine')
+    //   const matchedRules = await evaluateRules({
+    //     messageBody: body.body || '',
+    //     phoneNumber: normalizedPhone,
+    //     threadId,
+    //   })
+    //   for (const rule of matchedRules) {
+    //     await applyRuleActions(rule, {
+    //       messageBody: body.body || '',
+    //       phoneNumber: normalizedPhone,
+    //       threadId,
+    //     }, messageContext)
+    //   }
+    // } catch (error: any) {
+    //   logger.warn('rules_evaluation_error', messageContext, { error: error.message })
+    // }
 
     // 6) Update thread (increment unread_count for inbound messages, set SLA)
     const updateTimestamp = body.timestamp ? new Date(body.timestamp) : new Date()
