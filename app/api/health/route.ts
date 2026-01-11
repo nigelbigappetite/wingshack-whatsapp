@@ -1,14 +1,7 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/src/lib/supabaseAdmin'
 import { createClient } from '@supabase/supabase-js'
-
-// Track last webhook received timestamp (in-memory for now)
-let lastWebhookReceivedAt: string | null = null
-
-// Export function to update last webhook time (called from webhook handler)
-export function updateLastWebhookTime() {
-  lastWebhookReceivedAt = new Date().toISOString()
-}
+import { getLastWebhookTime } from '@/src/lib/healthTracking'
 
 export async function GET() {
   try {
@@ -45,14 +38,14 @@ export async function GET() {
     return NextResponse.json({
       supabase_ok: supabaseOk,
       realtime_ok: realtimeOk,
-      last_webhook_received_at: lastWebhookReceivedAt,
+      last_webhook_received_at: getLastWebhookTime(),
     })
   } catch (error: any) {
     return NextResponse.json(
       {
         supabase_ok: false,
         realtime_ok: false,
-        last_webhook_received_at: lastWebhookReceivedAt,
+        last_webhook_received_at: getLastWebhookTime(),
         error: error.message,
       },
       { status: 500 }

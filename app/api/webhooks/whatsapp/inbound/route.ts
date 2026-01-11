@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/src/lib/supabaseAdmin'
 import { normalizePhone } from '@/src/lib/utils'
-import { updateLastWebhookTime } from '@/app/api/health/route'
+import { updateLastWebhookTime } from '@/src/lib/healthTracking'
 import { getOrCreateCorrelationId } from '@/src/lib/correlation'
 import { logger } from '@/src/lib/logger'
 import * as Sentry from '@sentry/nextjs'
