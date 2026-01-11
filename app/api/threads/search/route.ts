@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
         const { data: matchingMessages } = await messageQuery
 
         if (matchingMessages && matchingMessages.length > 0) {
-          const threadIds = [...new Set(matchingMessages.map(m => m.thread_id))]
+          const threadIds = Array.from(new Set(matchingMessages.map(m => m.thread_id)))
           query = query.in('id', threadIds)
         } else {
           // No matches, return empty
