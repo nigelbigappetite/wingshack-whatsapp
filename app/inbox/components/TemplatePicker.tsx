@@ -51,6 +51,16 @@ export function TemplatePicker({ threadId, onSelect }: TemplatePickerProps) {
     }
   }, [selectedTemplateId, threadId])
 
+  useEffect(() => {
+    fetchTemplates()
+  }, [])
+
+  useEffect(() => {
+    if (selectedTemplateId && threadId) {
+      renderPreview()
+    }
+  }, [selectedTemplateId, threadId, renderPreview])
+
   const handleUseTemplate = () => {
     if (preview) {
       onSelect(preview)
