@@ -66,6 +66,15 @@ export async function POST(request: NextRequest) {
     const normalizedPhone = normalizePhone(body.from_phone_e164)
     logger.debug('phone_normalized', logContext, { original: body.from_phone_e164, normalized: normalizedPhone })
 
+    // Get default channel ID (for new threads/contacts)
+    const { data: defaultChannel } = await supabaseAdmin
+      .from('channels')
+      .select('id')
+      .eq('name', 'Default')
+      .maybeSingle()
+    
+    const defaultChannelId = defaultChannel?.id || null
+
     // 1) Upsert contact by phone_e164
     const { data: contact, error: contactError } = await supabaseAdmin
       .from('contacts')
@@ -114,7 +123,7 @@ export async function POST(request: NextRequest) {
         .from('threads')
         .insert({
           contact_id: contact.id,
-          channel_id: channelId,
+          channel_id: defaultChannelId,
           last_message_at: messageTimestamp.toISOString(),
           last_message_preview: body.body.substring(0, 140),
         })
@@ -175,7 +184,7 @@ export async function POST(request: NextRequest) {
       .from('messages')
       .insert({
         thread_id: threadId,
-        channel_id: threadData?.channel_id || channelId,
+        channel_id: threadData?.channel_id || defaultChannelId,
         direction: 'in',
         body: body.body,
         provider_message_id: providerMessageId || null,
