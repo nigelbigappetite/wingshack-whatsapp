@@ -8,10 +8,15 @@ import * as Sentry from '@sentry/nextjs'
 
 interface InboundWebhookPayload {
   from_phone_e164: string
-  body: string
+  body?: string // Optional because media messages might not have body
   wa_message_id?: string // Legacy field name, maps to provider_message_id
   provider_message_id?: string // Preferred field name
   timestamp?: string
+  message_type?: string // 'text', 'image', 'video', 'document', etc.
+  media_url?: string
+  mime_type?: string
+  file_name?: string
+  size_bytes?: number
 }
 
 export async function POST(request: NextRequest) {
@@ -54,10 +59,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!body.body) {
-      logger.warn('webhook_validation_error', logContext, { error: 'Missing body' })
+    // Validate that we have either body text or media
+    if (!body.body && !body.media_url) {
+      logger.warn('webhook_validation_error', logContext, { error: 'Missing body or media_url' })
       return NextResponse.json(
-        { error: 'Missing required field: body' },
+        { error: 'Missing required field: body or media_url' },
         { status: 400 }
       )
     }
@@ -125,7 +131,7 @@ export async function POST(request: NextRequest) {
           contact_id: contact.id,
           channel_id: defaultChannelId,
           last_message_at: messageTimestamp.toISOString(),
-          last_message_preview: body.body.substring(0, 140),
+          last_message_preview: body.body?.substring(0, 140) || 'Attachment',
         })
         .select()
         .single()
@@ -186,7 +192,7 @@ export async function POST(request: NextRequest) {
         thread_id: threadId,
         channel_id: threadData?.channel_id || defaultChannelId,
         direction: 'in',
-        body: body.body,
+        body: body.body || null,
         provider_message_id: providerMessageId || null,
         status: 'received',
         created_at: messageTimestamp.toISOString(),
@@ -242,14 +248,14 @@ export async function POST(request: NextRequest) {
     try {
       const { evaluateRules, applyRuleActions, canAutoReply, sendAutoReply } = await import('@/src/lib/rulesEngine')
       const matchedRules = await evaluateRules({
-        messageBody: body.body,
+        messageBody: body.body || '',
         phoneNumber: normalizedPhone,
         threadId,
       })
 
       for (const rule of matchedRules) {
         await applyRuleActions(rule, {
-          messageBody: body.body,
+          messageBody: body.body || '',
           phoneNumber: normalizedPhone,
           threadId,
         }, messageContext)
