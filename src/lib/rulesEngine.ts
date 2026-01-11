@@ -16,6 +16,7 @@ export interface Rule {
   match_type: 'contains' | 'equals' | 'regex' | 'phone'
   match_value: string
   actions_json: RuleAction
+  auto_reply_cooldown_seconds?: number // Cooldown in seconds before allowing another auto-reply
 }
 
 export interface RuleContext {
