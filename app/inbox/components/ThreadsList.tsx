@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { supabaseClient } from '@/src/lib/supabaseClient'
 
 interface Thread {
@@ -9,6 +10,11 @@ interface Thread {
   contact_id: string
   last_message_at: string
   last_message_preview: string | null
+  status?: 'open' | 'pending' | 'resolved' | 'closed'
+  unread_count?: number
+  first_response_due_at?: string | null
+  follow_up_due_at?: string | null
+  sla_breached_at?: string | null
   contacts?: {
     id: string
     phone_e164: string
@@ -19,17 +25,50 @@ interface Thread {
 }
 
 export function ThreadsList({ selectedThreadId }: { selectedThreadId?: string }) {
+  const searchParams = useSearchParams()
   const [threads, setThreads] = useState<Thread[]>([])
   const [contacts, setContacts] = useState<Map<string, string>>(new Map())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Fetch initial threads and contacts
+  // Fetch threads (with search/filter if params present)
   const fetchThreads = useCallback(async () => {
     try {
       setLoading(true)
       
-      // Fetch threads with contact join
+      const q = searchParams.get('q')
+      const status = searchParams.get('status')
+      const unread = searchParams.get('unread') === 'true'
+
+      // If search/filter params exist, use search API
+      if (q || status || unread) {
+        const params = new URLSearchParams()
+        if (q) params.set('q', q)
+        if (status) params.set('status', status)
+        if (unread) params.set('unread', 'true')
+
+        const response = await fetch(`/api/threads/search?${params.toString()}`)
+        const data = await response.json()
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to search threads')
+        }
+
+        setThreads(data.threads || [])
+        
+        // Extract contacts
+        const contactMap = new Map<string, string>()
+        data.threads?.forEach((thread: any) => {
+          const contact = thread.contacts
+          if (contact?.phone_e164) {
+            contactMap.set(thread.contact_id, contact.phone_e164)
+          }
+        })
+        setContacts(contactMap)
+        return
+      }
+
+      // Otherwise, fetch all threads normally
       const { data: threadsData, error: threadsError } = await supabaseClient
         .from('threads')
         .select(`
@@ -37,6 +76,11 @@ export function ThreadsList({ selectedThreadId }: { selectedThreadId?: string })
           contact_id,
           last_message_at,
           last_message_preview,
+          status,
+          unread_count,
+          first_response_due_at,
+          follow_up_due_at,
+          sla_breached_at,
           contacts!contact_id (
             id,
             phone_e164
@@ -80,7 +124,7 @@ export function ThreadsList({ selectedThreadId }: { selectedThreadId?: string })
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [searchParams])
 
   useEffect(() => {
     fetchThreads()
@@ -207,7 +251,20 @@ export function ThreadsList({ selectedThreadId }: { selectedThreadId?: string })
             href={`/inbox?thread=${thread.id}`}
             className={`thread-item ${isActive ? 'active' : ''}`}
           >
-            <div className="thread-phone">{phone}</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+              <div className="thread-phone">{phone}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {thread.status && <ThreadStatusBadge status={thread.status} />}
+                {thread.unread_count && thread.unread_count > 0 && (
+                  <UnreadIndicator count={thread.unread_count} />
+                )}
+                <SLABadge
+                  firstResponseDueAt={thread.first_response_due_at || null}
+                  followUpDueAt={thread.follow_up_due_at || null}
+                  slaBreachedAt={thread.sla_breached_at || null}
+                />
+              </div>
+            </div>
             <div className="thread-preview">
               {thread.last_message_preview || 'No messages'}
             </div>

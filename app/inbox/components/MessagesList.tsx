@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { supabaseClient } from '@/src/lib/supabaseClient'
+import { MessageAttachment } from './MessageAttachment'
 
 interface Message {
   id: string
@@ -10,6 +11,10 @@ interface Message {
   body: string
   created_at: string
   status: string
+  message_type?: string | null
+  media_url?: string | null
+  mime_type?: string | null
+  file_name?: string | null
 }
 
 // Global event listener for manual refresh
@@ -38,7 +43,7 @@ export function MessagesList({ threadId }: { threadId: string }) {
 
       const { data: messagesData, error: messagesError } = await supabaseClient
         .from('messages')
-        .select('id, thread_id, direction, body, created_at, status')
+        .select('id, thread_id, direction, body, created_at, status, message_type, media_url, mime_type, file_name')
         .eq('thread_id', threadId)
         .order('created_at', { ascending: true })
 
@@ -163,7 +168,17 @@ export function MessagesList({ threadId }: { threadId: string }) {
           key={message.id}
           className={`message-item message-${message.direction}`}
         >
-          <div className="message-bubble">{message.body}</div>
+          <div className="message-bubble">
+            {message.body}
+            {message.media_url && (
+              <MessageAttachment
+                mediaUrl={message.media_url}
+                mimeType={message.mime_type}
+                fileName={message.file_name}
+                messageType={message.message_type}
+              />
+            )}
+          </div>
           <div className="message-time">{formatTime(message.created_at)}</div>
         </div>
       ))}
