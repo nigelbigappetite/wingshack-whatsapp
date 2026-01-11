@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/src/lib/supabaseAdmin'
 import { getOrCreateCorrelationId } from '@/src/lib/correlation'
 import { logger } from '@/src/lib/logger'
-import * as Sentry from '@sentry/nextjs'
+// Sentry temporarily disabled for simplification
+// import * as Sentry from '@sentry/nextjs'
 import { randomUUID } from 'crypto'
-import { uploadToStorage } from '@/src/lib/supabaseStorage'
+// Temporarily disabled for simplification
+// import { uploadToStorage } from '@/src/lib/supabaseStorage'
 
 interface SendMessagePayload {
   thread_id: string
@@ -19,40 +21,8 @@ export async function POST(request: NextRequest) {
   try {
     logger.info('send_message_request', logContext)
     
-    // Check if request is multipart/form-data (has attachment)
-    const contentType = request.headers.get('content-type') || ''
-    let body: SendMessagePayload
-    let mediaUrl: string | null = null
-    let messageType: string = 'text'
-    let mimeType: string | null = null
-    let fileName: string | null = null
-    let sizeBytes: number | null = null
-
-    if (contentType.includes('multipart/form-data')) {
-      const formData = await request.formData()
-      const threadId = formData.get('thread_id') as string
-      const messageBody = formData.get('body') as string
-      const attachment = formData.get('attachment') as File | null
-
-      body = {
-        thread_id: threadId,
-        body: messageBody,
-      }
-
-      if (attachment) {
-        // Upload to Supabase Storage
-        const filePath = `outbound/${threadId}/${Date.now()}-${attachment.name}`
-        mediaUrl = await uploadToStorage(attachment, filePath)
-        messageType = attachment.type.startsWith('image/') ? 'image' : 'document'
-        mimeType = attachment.type
-        fileName = attachment.name
-        sizeBytes = attachment.size
-
-        logger.info('attachment_uploaded', logContext, { mediaUrl, fileName })
-      }
-    } else {
-      body = await request.json()
-    }
+    // Simplified: JSON only, no attachments
+    const body: SendMessagePayload = await request.json()
 
     // Validate required fields
     if (!body.thread_id) {
@@ -135,11 +105,11 @@ export async function POST(request: NextRequest) {
         status: 'queued',
         request_id: requestId,
         idempotency_key: idempotencyKey,
-        message_type: messageType,
-        media_url: mediaUrl,
-        mime_type: mimeType,
-        file_name: fileName,
-        size_bytes: sizeBytes,
+        message_type: 'text',
+        media_url: null,
+        mime_type: null,
+        file_name: null,
+        size_bytes: null,
       })
       .select()
       .single()
@@ -152,10 +122,11 @@ export async function POST(request: NextRequest) {
       }
 
       logger.error('message_insert_error', sendContext, messageError)
-      Sentry.captureException(messageError || new Error('Message insert failed'), {
-        tags: { component: 'send_message', request_id: requestId, thread_id: body.thread_id },
-        extra: sendContext,
-      })
+      // Sentry temporarily disabled
+      // Sentry.captureException(messageError || new Error('Message insert failed'), {
+      //   tags: { component: 'send_message', request_id: requestId, thread_id: body.thread_id },
+      //   extra: sendContext,
+      // })
       return NextResponse.json(
         { error: 'Failed to insert message' },
         { status: 500 }
@@ -174,7 +145,7 @@ export async function POST(request: NextRequest) {
         body: body.body,
         status: 'queued',
         correlation_id: requestId,
-        media_url: mediaUrl, // Include media URL for worker
+        media_url: null, // Simplified: no attachments
       })
       .select()
       .single()
@@ -257,10 +228,11 @@ export async function POST(request: NextRequest) {
     })
   } catch (error: any) {
     logger.error('send_message_error', logContext, { error: error.message, stack: error.stack })
-    Sentry.captureException(error, {
-      tags: { component: 'send_message', request_id: requestId },
-      extra: logContext,
-    })
+    // Sentry temporarily disabled
+    // Sentry.captureException(error, {
+    //   tags: { component: 'send_message', request_id: requestId },
+    //   extra: logContext,
+    // })
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

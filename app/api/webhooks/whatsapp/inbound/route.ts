@@ -4,7 +4,8 @@ import { normalizePhone } from '@/src/lib/utils'
 import { updateLastWebhookTime } from '@/src/lib/healthTracking'
 import { getOrCreateCorrelationId } from '@/src/lib/correlation'
 import { logger } from '@/src/lib/logger'
-import * as Sentry from '@sentry/nextjs'
+// Sentry temporarily disabled for simplification
+// import * as Sentry from '@sentry/nextjs'
 
 interface InboundWebhookPayload {
   from_phone_e164: string
@@ -93,10 +94,11 @@ export async function POST(request: NextRequest) {
 
     if (contactError) {
       logger.error('contact_upsert_error', { ...logContext, phone: normalizedPhone }, contactError)
-      Sentry.captureException(contactError, {
-        tags: { component: 'webhook', request_id: requestId },
-        extra: { phone: normalizedPhone },
-      })
+      // Sentry temporarily disabled
+      // Sentry.captureException(contactError, {
+      //   tags: { component: 'webhook', request_id: requestId },
+      //   extra: { phone: normalizedPhone },
+      // })
       return NextResponse.json(
         { error: 'Failed to upsert contact' },
         { status: 500 }
@@ -232,10 +234,11 @@ export async function POST(request: NextRequest) {
       }
 
       logger.error('message_insert_error', messageContext, messageError)
-      Sentry.captureException(messageError || new Error('Message insert failed'), {
-        tags: { component: 'webhook', request_id: requestId, thread_id: threadId },
-        extra: messageContext,
-      })
+      // Sentry temporarily disabled
+      // Sentry.captureException(messageError || new Error('Message insert failed'), {
+      //   tags: { component: 'webhook', request_id: requestId, thread_id: threadId },
+      //   extra: messageContext,
+      // })
       return NextResponse.json(
         { error: 'Failed to insert message' },
         { status: 500 }
@@ -318,10 +321,11 @@ export async function POST(request: NextRequest) {
     })
   } catch (error: any) {
     logger.error('webhook_error', logContext, { error: error.message, stack: error.stack })
-    Sentry.captureException(error, {
-      tags: { component: 'webhook', request_id: requestId },
-      extra: logContext,
-    })
+    // Sentry temporarily disabled
+    // Sentry.captureException(error, {
+    //   tags: { component: 'webhook', request_id: requestId },
+    //   extra: logContext,
+    // })
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
